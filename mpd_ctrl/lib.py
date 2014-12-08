@@ -18,7 +18,7 @@ def sleep_to_time(time):
     now = datetime.now(tz=timezone.utc)
 
     if now.timetz() <= time:
-        next_start = datetime.combine(now.date, time)
+        next_start = datetime.combine(now.date(), time)
     else:
         _date = (now + timedelta(days=1)).date()
         next_start = datetime.combine(_date, time)
