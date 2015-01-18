@@ -21,8 +21,10 @@ setup(name='mpd_ctrl',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      install_requires=['python-mpd2']
-      # entry_points={
-      #     'console_scripts': [],
-      # }
-)
+      install_requires=['aiohttp', 'python-mpd2'],  #, 'quick2wire'],
+      entry_points={
+          'console_scripts': [
+            'zr = zr'
+          ],
+      },
+  )
