@@ -5,24 +5,25 @@ import logging
 log = logging.getLogger(__name__)
 
 
-MORNING_PLAYLIST = [
-    'http://174.36.51.212:10042',
-    'http://s14.myradiostream.com:4668',
-]
-
+NIGHT_TIME = time(23-3, 0, tzinfo=timezone.utc)
+NIGHT_VOL_START = 70
+NIGHT_MIDDLE_DURATION = timedelta(minutes=10)
+NIGHT_VOL_MIDDLE = 90
+NIGHT_END_DURATION = timedelta(hours=3)
+NIGHT_VOL_END = 80
 NIGHT_PLAYLIST = [
     'http://streaming.radionomy.com/SleepTime',
     'http://shurf.me:9480/nature96.aac',
 ]
 
 MORNING_TIME = time(7-3, 0, tzinfo=timezone.utc)
-NIGHT_TIME = time(23-3, 0, tzinfo=timezone.utc)
-
-NIGHT_VOL = 70
-
-MORNING_VOL_MIN = 40
-MORNING_VOL_MAX = 70
+MORNING_VOL_MIN = 60
+MORNING_VOL_MAX = 87
 MORNING_DURATION = timedelta(hours=1)
+MORNING_PLAYLIST = [
+    'http://174.36.51.212:10042',
+    'http://s14.myradiostream.com:4668',
+]
 
 
 class MPDScheduler:
@@ -33,19 +34,6 @@ class MPDScheduler:
         self.mpd = mpd
 
     @asyncio.coroutine
-    def morning(self):
-        while True:
-            yield from self._sleep_to_time(MORNING_TIME)
-            yield from self._play(MORNING_PLAYLIST, MORNING_VOL_MIN)
-            yield from _gradual_increase_volume(MORNING_DURATION, MORNING_VOL_MAX)
-
-    @asyncio.coroutine
-    def nigth(self):
-        while True:
-            yield from self._sleep_to_time(NIGHT_TIME)
-            yield from self._play(NIGHT_PLAYLIST, NIGHT_VOL)
-
-    @asyncio.coroutine
     def start(self):
         self._future_morning = asyncio.async(self.morning())
         self._future_nigth = asyncio.async(self.nigth())
@@ -53,6 +41,21 @@ class MPDScheduler:
     def stop(self):
         self._future_morning.cancel()
         self._future_nigth.cancel()
+
+    @asyncio.coroutine
+    def nigth(self):
+        while True:
+            yield from self._sleep_to_time(NIGHT_TIME)
+            yield from self._play(NIGHT_PLAYLIST, NIGHT_VOL_START)
+            yield from self._gradual_increase_volume(NIGHT_MIDDLE_DURATION, NIGHT_VOL_MIDDLE)
+            yield from self._gradual_increase_volume(NIGHT_END_DURATION, NIGHT_VOL_END)
+
+    @asyncio.coroutine
+    def morning(self):
+        while True:
+            yield from self._sleep_to_time(MORNING_TIME)
+            yield from self._play(MORNING_PLAYLIST, MORNING_VOL_MIN)
+            yield from self._gradual_increase_volume(MORNING_DURATION, MORNING_VOL_MAX)
 
     @asyncio.coroutine
     def _sleep_to_time(self, time):
