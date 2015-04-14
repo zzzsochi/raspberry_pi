@@ -1,6 +1,4 @@
 import asyncio
-import struct
-import subprocess
 import logging
 
 from zr.lib.nrf24 import NRF24
@@ -18,8 +16,13 @@ class RadioController:
 
     def __init__(self, mpd):
         self.mpd = mpd
-        self.radio = radio = NRF24(csn=26, ce=24)
+        self.radio = NRF24(csn=26, ce=24)
 
+    @asyncio.coroutine
+    def start(self, interval):
+        self._stop = False
+
+        radio = self.radio
         with radio:
             radio.status = NRF24.STATUS.stand_by
 
@@ -30,12 +33,9 @@ class RadioController:
 
             radio.channel = 13
 
-            radio.pipes[0] = MpdPipe(mpd, self.radio, 0, queue_size=10)
+            radio.pipes[0] = MpdPipe(self.mpd, self.radio, 0, queue_size=10)
 
-    @asyncio.coroutine
-    def start(self, interval):
-        self._stop = False
-        asyncio.sleep(0.5)  # for stable start radio
+        yield from asyncio.sleep(0.1)  # for stable start radio
 
         yield from self._start_pipes()
         yield from self._main_circle(interval)
@@ -60,36 +60,21 @@ class RadioController:
     def _start_pipes(self):
         self._pipes_tasks = []
         for pipe in self.radio.pipes.values():
-            if hasattr(pipe, 'process_received_data_coro'):
-                self._pipes_tasks.append(
-                    asyncio.async(
-                        pipe.process_received_data_coro()))
+            if hasattr(pipe, 'task'):
+                task = asyncio.async(pipe.task())
+                self._pipes_tasks.append(task)
 
     @asyncio.coroutine
     def _stop_pipes(self):
         for pipe in self.radio.pipes.values():
-            if hasattr(pipe, 'stop_coro'):
-                pipe.stop_coro = True
+            if hasattr(pipe, 'stop'):
+                pipe.stop()
 
         yield from asyncio.wait(self._pipes_tasks, timeout=2)
 
         for task in self._pipes_tasks:
             if not task.done():
                 task.cancel()
-
-
-@asyncio.coroutine
-def radio_print_received_data(pipe):
-    """ Coroutine for development
-    """
-    while True:
-        raw = yield from pipe.receive_coro()
-
-        try:
-            data = raw.decode('ascii')
-            print(data)
-        except UnicodeDecodeError:
-            print(raw)
 
 
 def main():
@@ -108,7 +93,6 @@ def main():
 
     radio_controller = RadioController(mpd=mpd)
     tasks.append(asyncio.async(radio_controller.start(interval=0.05)))
-
 
     try:
         loop.run_forever()

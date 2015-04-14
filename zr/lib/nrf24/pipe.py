@@ -1,4 +1,3 @@
-import asyncio
 import queue
 import logging
 
@@ -103,42 +102,6 @@ class Pipe(BasePipe):
 
     def receive(self):
         try:
-            return self._queue.get(block=False)
-        except self._queue.Empty:
-            return None
-
-
-class PipeAio(BasePipe):
-    _payload_length = None
-
-    def __init__(self, radio, number, queue_size=1024):
-        super().__init__(radio, number)
-        self._queue = asyncio.Queue(maxsize=queue_size)
-
-    def __repr__(self):
-        return '<Pipe: {}>'.format(self.number)
-
-    def receive_from_fifo(self, data):
-        try:
-            self._queue.put_nowait(data)
-            return True
-        except asyncio.QueueFull:
-            logger.warning(
-                'queue pipe {} is full, lost {} bytes'.format(self.number, len(data)))
-            return False
-
-    def has_data(self):
-        return not self._queue.empty()
-
-    def receive(self):
-        try:
             return self._queue.get_nowait()
-        except asyncio.QueueEmpty:
-            return None
-
-    @asyncio.coroutine
-    def receive_coro(self):
-        try:
-            return (yield from self._queue.get())
-        except asyncio.QueueEmpty:
+        except queue.Empty:
             return None

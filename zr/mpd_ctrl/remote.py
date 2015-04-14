@@ -2,13 +2,13 @@ import asyncio
 import struct
 import logging
 
-from zr.lib.nrf24.pipe import PipeAio
+from zr.lib.nrf24.pipe import Pipe
 
 log = logging.getLogger(__name__)
 
 
-class MpdPipe(PipeAio):
-    stop_coro = True
+class MpdPipe(Pipe):
+    _stop = True
 
     def __init__(self, mpd, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,21 +19,19 @@ class MpdPipe(PipeAio):
         self.auto_ack = False
         self.enabled = True
 
-        self.stop_coro = False
+        self._stop = False
+
+    def stop(self):
+        self._stop = True
 
     @asyncio.coroutine
-    def process_received_data_coro(self):
-        while not self.stop_coro:
-            rc_future = asyncio.async(self.receive_coro())
+    def task(self):
+        while not self._stop:
+            if not self.has_data():
+                yield from asyncio.sleep(0.01)
+                continue
 
-            while not self.stop_coro:
-                yield from asyncio.wait([rc_future], timeout=1)
-                if rc_future.done():
-                    raw = rc_future.result()
-                    break
-            else:
-                rc_future.cancel()
-                break
+            raw = self.receive()
 
             log.debug('receiving data: {!r}'.format(raw))
             command, data = struct.unpack('cb', raw)
