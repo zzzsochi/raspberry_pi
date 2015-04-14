@@ -6,22 +6,24 @@ log = logging.getLogger(__name__)
 
 
 NIGHT_TIME = time(23-3, 0, tzinfo=timezone.utc)
-NIGHT_VOL_START = 70
+NIGHT_VOL_START = 35
 NIGHT_MIDDLE_DURATION = timedelta(minutes=10)
-NIGHT_VOL_MIDDLE = 90
+NIGHT_VOL_MIDDLE = 50
 NIGHT_END_DURATION = timedelta(hours=3)
-NIGHT_VOL_END = 80
+NIGHT_VOL_END = 30
 NIGHT_PLAYLIST = [
     'http://streaming.radionomy.com/SleepTime',
     'http://shurf.me:9480/nature96.aac',
 ]
 
 MORNING_TIME = time(7-3, 0, tzinfo=timezone.utc)
-MORNING_VOL_MIN = 60
-MORNING_VOL_MAX = 87
+MORNING_VOL_MIN = 10
+MORNING_VOL_MAX = 20
 MORNING_DURATION = timedelta(hours=1)
 MORNING_PLAYLIST = [
-    'http://174.36.51.212:10042',
+    'http://mega5.fast-serv.com:8134',
+    'http://74.86.186.4:10042',
+    # 'http://174.36.51.212:10042',
     'http://s14.myradiostream.com:4668',
 ]
 
