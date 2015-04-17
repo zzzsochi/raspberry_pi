@@ -1,5 +1,3 @@
-import os
-
 from setuptools import setup, find_packages
 
 
@@ -21,10 +19,14 @@ setup(name='mpd_ctrl',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      install_requires=['aiohttp', 'python-mpd2'],  #, 'quick2wire'],
+      install_requires=[
+          'aiohttp',
+          'zope.dottedname',
+          'python-mpd2',
+      ],  # 'quick2wire'],
       entry_points={
           'console_scripts': [
-            'zr = zr'
+              'zr = zr'
           ],
       },
-  )
+)

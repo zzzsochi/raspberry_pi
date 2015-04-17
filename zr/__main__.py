@@ -1,11 +1,18 @@
 import asyncio
 import logging
 
-from zr.lib.nrf24 import NRF24
+try:
+    from zr.lib.nrf24 import NRF24
+except ImportError:
+    WITH_RADIO = False
+else:
+    WITH_RADIO = True
 
 from zr.mpd_ctrl.mpc import MPD
 from zr.mpd_ctrl.remote import MpdPipe
 from zr.mpd_ctrl.scheduler import MPDScheduler
+
+from zr.web.lib.app import Application as Web
 
 
 log = logging.getLogger(__name__)
@@ -91,22 +98,31 @@ def main():
     mpd_scheduler = MPDScheduler(mpd=mpd)
     tasks.append(asyncio.async(mpd_scheduler.start()))
 
-    radio_controller = RadioController(mpd=mpd)
-    tasks.append(asyncio.async(radio_controller.start(interval=0.05)))
+    if WITH_RADIO:
+        radio_controller = RadioController(mpd=mpd)
+        tasks.append(asyncio.async(radio_controller.start(interval=0.05)))
+
+    web = Web()
+    web['mpd'] = mpd
+    web.include('zr.web')
+    web.start(loop)
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         mpd_scheduler.stop()
-        radio_controller.stop()
 
-        try:
-            loop.run_until_complete(asyncio.wait(tasks, timeout=5))
-        except Exception as exc:
-            log.error('exception while coroutines stoped: {}'.format(type(exc)))
-            log.error(exc)
-            import traceback
-            traceback.print_exc()
+        if WITH_RADIO:
+            radio_controller.stop()
+
+        if tasks:
+            try:
+                loop.run_until_complete(asyncio.wait(tasks, timeout=5))
+            except Exception as exc:
+                log.error('exception while coroutines stoped: {}'.format(type(exc)))
+                log.error(exc)
+                import traceback
+                traceback.print_exc()
 
         loop.stop()
     finally:

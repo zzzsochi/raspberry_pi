@@ -1,16 +1,18 @@
 """
 MPD API documentation:
 """
-import types
 import asyncio
-import subprocess
 import logging
 
+from .playlist import Playlist
+from .helpers import lock, lock_and_status, str_bool
+
 log = logging.getLogger(__name__)
-mpc_subprocess_locker = asyncio.Lock()
+
+mpc_subprocesslocker = asyncio.Lock()
 
 
-class _MPDProtocol(asyncio.Protocol):
+class MPDProtocol(asyncio.Protocol):
     def __init__(self, mpd):
         self.mpd = mpd
 
@@ -32,51 +34,15 @@ class _MPDProtocol(asyncio.Protocol):
         asyncio.async(self.mpd._reconnect())
 
 
-def _lock(func):
-    # lock method
-    def wrapper(self, *args, **kwargs):
-        if self._transport is None:
-            log.error("connection closed")
-            raise RuntimeError("connection closed")
-
-        with (yield from self._lock):
-            return (yield from (func(self, *args, **kwargs)))
-
-    return wrapper
-
-
-def _lock_and_status(func):
-    # lock, get last status from mpd and run method
-    @asyncio.coroutine
-    def wrapper(self, *args, **kwargs):
-        if self._transport is None:
-            log.error("connection closed")
-            raise RuntimeError("connection closed")
-
-        with (yield from self._lock):
-            self._status = yield from self._get_status()
-
-            res = func(self, *args, **kwargs)
-            if isinstance(res, types.GeneratorType):
-                return (yield from res)
-            else:
-                return res
-
-    return wrapper
-
-
-_str_bool = lambda v: v != '0'
-
-
 class MPD:
     """ Client for music player daemon
     """
     _status_casts = {
         'volume': int,
-        'repeat': _str_bool,
-        'random': _str_bool,
-        'single': _str_bool,
-        'consume': _str_bool,
+        'repeat': str_bool,
+        'random': str_bool,
+        'single': str_bool,
+        'consume': str_bool,
         'playlist': int,
         'playlistlength': int,
         'song': int,
@@ -137,7 +103,7 @@ class MPD:
             self._port = port
             self._loop = loop
 
-            _pf = lambda: _MPDProtocol(self)
+            _pf = lambda: MPDProtocol(self)
             t, p = yield from loop.create_connection(_pf, host, port)
             self._transport = t
             self._protocol = p
@@ -164,22 +130,22 @@ class MPD:
         return {k: self._status_casts.get(k, str)(v) for k, v in
                 (l.split(': ', 1) for l in raw.split('\n')[:-2])}
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def get_status(self):
         return self._status
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def play(self, track):
         yield from self._send_command('play', track)
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def stop(self):
         yield from self._send_command('stop')
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def toggle(self):
         if self._status['state'] == 'play':
@@ -189,21 +155,20 @@ class MPD:
         elif self._status['state'] == 'stop':
             yield from self._send_command('play', 1)
 
-    @_lock_and_status
+    @lock_and_status
     def get_volume(self):
         return self._status['volume']
 
-    @_lock
+    @lock
     @asyncio.coroutine
     def set_volume(self, value):
         assert 0 <= value <= 100
         yield from self._send_command('setvol', value)
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def incr_volume(self, value):
         assert -100 <= value <= 100
-        value_str = str(value) if value < 0 else '+{}'.format(value)
         volume = self._status['volume'] + value
 
         if volume < 0:
@@ -213,7 +178,7 @@ class MPD:
 
         yield from self._send_command('setvol', volume)
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def next(self, count=1):
         song = self._status['song'] + count
@@ -222,7 +187,7 @@ class MPD:
 
         yield from self._send_command('play', song)
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def prev(self, count=1):
         song = self._status['song'] - count
@@ -231,17 +196,17 @@ class MPD:
 
         yield from self._send_command('play', song)
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def clear(self):
         yield from self._send_command('clear')
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def add(self, uri):
         yield from self._send_command('add', uri)
 
-    @_lock_and_status
+    @lock_and_status
     @asyncio.coroutine
     def shuffle(self, start=None, end=None):
         assert start is None and end is None
@@ -249,3 +214,7 @@ class MPD:
 
         if start is not None:
             yield from self._send_command('shuffle', '{}:{}'.format(start, end))
+
+    @property
+    def playlist(self):
+        return Playlist(self)
