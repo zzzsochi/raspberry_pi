@@ -11,32 +11,42 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
     });
 
 
-    $scope.statusRefresh = function() {
+    $scope.statusRefresh = function () {
         var mpdStatus = $resource('/mpd');
         mpdStatus.get(function (res) {
             $scope.status = res;
         });
     }
 
-    $scope.playlistRefresh = function() {
+    $scope.playlistRefresh = function () {
         mpdPlaylist.list(function (res) {
             $scope.playlist = res;
         });
     }
 
-    $scope.refresh = function() {
+    $scope.refresh = function () {
+        console.log('refresh')
         $scope.statusRefresh();
         $scope.playlistRefresh();
-        $timeout($scope.refresh, 10000);
     }
 
-    $scope.play = function(id) {
+    $scope.refreshCycle = function (interval) {
+        $scope.refresh();
+        $timeout(function () {$scope.refreshCycle(interval)}, interval);
+    }
+
+    $scope.play = function (id) {
         var mpdPlaylistSong = $resource('/mpd/playlist/:id',
             {id: id},
             {play: {method: 'PUT'}}
         );
 
-        mpdPlaylistSong.play({action: 'play'}, $scope.refresh);
+        mpdPlaylistSong.play({action: 'play'}, function () {
+            $scope.refresh()
+            $timeout($scope.refresh, 1000);
+            $timeout($scope.refresh, 2000);
+            $timeout($scope.refresh, 5000);
+        });
     }
 
     $scope.add = function(url) {
@@ -47,5 +57,5 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
         console.log(name);
     }
 
-    $scope.refresh();
+    $scope.refreshCycle(10000);
 });
