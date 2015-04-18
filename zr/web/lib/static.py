@@ -13,9 +13,9 @@ log = logging.getLogger(__name__)
 class StaticResource(Resource):
     path = None
 
-    def __init__(self, parent, name, path):
+    def __init__(self, parent, name):
         super().__init__(parent, name)
-        self.path = os.path.abspath(path)
+        self.path = os.path.abspath(self.path)
 
     @asyncio.coroutine
     def __getchild__(self, name):
@@ -33,4 +33,10 @@ class StaticView(View):
 
 
 def includeme(app):
+    app.add_method('add_static', add_static)
     app.setup_resource(StaticResource, StaticView)
+
+
+def add_static(app, parent, name, path):
+    SRes = type('StaticResource', (StaticResource,), {'path': path})
+    app.setup_resource(SRes, parent=parent, name=name)
