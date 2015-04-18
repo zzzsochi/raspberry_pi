@@ -1,5 +1,10 @@
+""" DO NOT USE IN PRODUCTION!!!
+"""
+
 import os
 import asyncio
+import mimetypes
+import warnings
 import logging
 
 from aiohttp.web import Response
@@ -28,8 +33,14 @@ class StaticView(View):
         path = os.path.join(self.resource.path, *self.request.tail)
         log.debug("static path: {}".format(path))
 
+        ext = os.path.splitext(path)[1]
+        ct = mimetypes.types_map.get(ext, 'application/octet-stream')
+
         with open(path, 'rb') as f:
-            return Response(body=f.read())
+            return Response(
+                body=f.read(),
+                headers={'Content-Type': ct},
+            )
 
 
 def add_static(app, parent, name, path, resource_class=StaticResource):
@@ -40,5 +51,6 @@ def add_static(app, parent, name, path, resource_class=StaticResource):
 
 
 def includeme(app):
+    warnings.warn("Do not use this module in production!")
     app.add_method('add_static', add_static)
     app.bind_view(StaticResource, StaticView)
