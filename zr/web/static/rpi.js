@@ -51,6 +51,8 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
 
     $scope.add = function(url) {
         mpdPlaylist.add({file: url}, $scope.refresh);
+        $scope.refresh();
+        $scope.addNewUrl = '';
     }
 
     $scope.playlistLoad = function(name) {
