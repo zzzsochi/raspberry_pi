@@ -40,5 +40,10 @@ class Playlist:
 
     @lock
     @asyncio.coroutine
+    def add(self, url):
+        yield from self.mpc._send_command('add', url)
+
+    @lock
+    @asyncio.coroutine
     def play(self, id):
         yield from self.mpc._send_command('playid', id)
