@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 class Application(BaseApplication):
-    root_factory = Root
+    root_class = Root
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('router', Router(self))
@@ -42,30 +42,31 @@ class Application(BaseApplication):
 
             func(self)
 
-    def set_root_factory(self, root_factory):
-        self.root_factory = root_factory
     def add_method(self, name, func):
         meth = types.MethodType(func, self)
         setattr(self, name, meth)
 
+    def set_root_class(self, root_class):
+        self.root_class = root_class
+
     def get_root(self, request):
-        return self.root_factory(request)
+        return self.root_class(request)
 
     def setup_resource(self, resource, view=None, parent=None, name=None):
         assert ((parent is None and name is None)
                 or (parent is not None and name is not None))
 
-        setup = self['resources'].setdefault(resource, ResourceSetup())
+        setup = self['resources'].setdefault(resource, _ResourceSetup())
 
         if view is not None:
             setup.view = view
 
         if parent is not None:
-            parent_setup = self['resources'].setdefault(parent, ResourceSetup())
+            parent_setup = self['resources'].setdefault(parent, _ResourceSetup())
             parent_setup.children[name] = resource
 
 
-class ResourceSetup:
+class _ResourceSetup:
     def __init__(self):
         self.view = None
         self.children = {}
