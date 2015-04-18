@@ -1,34 +1,46 @@
 import asyncio
 import logging
 
+from .abc import AbstractResource
 from .traversal import Traverser
 
 log = logging.getLogger(__name__)
 
 
-class Resource:
+class Resource(AbstractResource):
     def __init__(self, parent, name):
         self.parent = parent
         self.name = name
-        self.request = parent.request
-        self.app = self.request.app
-        self.setup = self.app['resources'].get(self.__class__)
+
+        if parent is not None:
+            self.request = parent.request
+            self.app = self.request.app
+            self.setup = self.app['resources'].get(self.__class__)
 
     def __getitem__(self, name):
         return Traverser(self, [name])
 
     @asyncio.coroutine
     def __getchild__(self, name):
-        raise NotImplementedError
+        return None
 
 
-class Root(Resource):
-    def __init__(self, request):
-        self.parent = None
-        self.name = None
-        self.request = request
-        self.app = request.app
-
+class DispatchMixin:
     @asyncio.coroutine
     def __getchild__(self, name):
-        return self
+        if self.setup is not None and name in self.setup.children:
+            return self.setup.children[name](self, name)
+        else:
+            return None
+
+
+class DispatchResource(DispatchMixin, Resource):
+    pass
+
+
+class Root(DispatchResource):
+    def __init__(self, request):
+        super().__init__(parent=None, name=None)
+        self.request = request
+        self.app = self.request.app
+        self.setup = self.app['resources'].get(self.__class__)
