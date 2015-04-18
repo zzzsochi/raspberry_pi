@@ -1,17 +1,9 @@
 import asyncio
 
-from aiohttp.web import HTTPNotFound
+from aiohttp.web import HTTPNotFound, HTTPBadRequest
 
 from .lib.resources import Resource, DispatchMixin
 from .lib.views import RESTView
-
-
-class GetView(RESTView):
-    methods = {'get'}
-
-    @asyncio.coroutine
-    def get(self):
-        return (yield from self.resource.get())
 
 
 class MPDBase(Resource):
@@ -26,14 +18,50 @@ class MPD(DispatchMixin, MPDBase):
         return (yield from self.mpd.get_status())
 
 
-class MPDPlaylist(MPDBase):
+class MPDView(RESTView):
+    methods = {'get'}
+
     @asyncio.coroutine
     def get(self):
+        return (yield from self.resource.get())
+
+
+class MPDPlaylist(MPDBase):
+    @asyncio.coroutine
+    def list(self):
         return (yield from self.mpd.playlist.list())
+
+    @asyncio.coroutine
+    def add(self, url):
+        return (yield from self.mpd.playlist.add(url))
 
     @asyncio.coroutine
     def __getchild__(self, name):
         return MPDSong(self, name)
+
+
+class MPDPlaylistView(RESTView):
+    methods = {'get', 'post'}
+
+    @asyncio.coroutine
+    def get(self):
+        return (yield from self.resource.list())
+
+    @asyncio.coroutine
+    def post(self):
+        data = yield from self.request.json()
+
+        if 'file' not in data:
+            raise HTTPBadRequest(reason="file not exist in request")
+
+        file = data['file']
+
+        if not isinstance(file, str):
+            raise HTTPBadRequest(reason="bad file field type")
+        elif not (file.startswith('http://') or file.startswith('https://')):
+            raise HTTPBadRequest(reason="'file' must be url")
+
+        return (yield from self.resource.add(file))
 
 
 class MPDSong(DispatchMixin, MPDBase):
@@ -74,7 +102,9 @@ class MPDSongView(RESTView):
 
 
 def includeme(app):
-    app.bind_view(MPDBase, GetView)
     app.add_child(app.root_class, 'mpd', MPD)
     app.add_child(MPD, 'playlist', MPDPlaylist)
+
+    app.bind_view(MPD, MPDView)
+    app.bind_view(MPDPlaylist, MPDPlaylistView)
     app.bind_view(MPDSong, MPDSongView)
