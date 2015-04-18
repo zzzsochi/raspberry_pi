@@ -1,7 +1,8 @@
 import json
 import asyncio
 
-from aiohttp.web import Response, HTTPMethodNotAllowed
+from aiohttp.web import Response, StreamResponse
+from aiohttp.web import HTTPMethodNotAllowed
 
 from .abc import AbstractView
 
@@ -14,7 +15,6 @@ class View(AbstractView):
     @asyncio.coroutine
     def __call__(self):
         raise NotImplementedError
-        # return Response(body=self.request.path.encode('utf8'))
 
 
 class MethodsView(View):
@@ -54,16 +54,14 @@ class MethodsView(View):
         raise NotImplementedError
 
 
-def jsonify(coro):
-    @asyncio.coroutine
-    def wrapper(self):
-        data = yield from coro(self)
-        return Response(body=json.dumps(data).encode('utf8'))
-
-    return wrapper
-
-
 class RESTView(MethodsView):
-    @jsonify
     def __call__(self):
-        return (yield from super().__call__())
+        data = yield from super().__call__()
+
+        if isinstance(data, StreamResponse):
+            return data
+        else:
+            return Response(
+                body=json.dumps(data).encode('utf8'),
+                headers={'Content-Type': 'application/json; charset=utf-8'},
+            )
