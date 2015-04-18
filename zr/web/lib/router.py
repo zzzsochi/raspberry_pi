@@ -48,9 +48,9 @@ class Router(AbstractRouter):
 
         for rc in resource_class.__mro__[:-1]:
             if (rc in self.app['resources']
-                    and self.app['resources'][rc].view is not None):
+                    and self.app['resources'][rc].get('view') is not None):
 
-                view = self.app['resources'][rc].view
+                view = self.app['resources'][rc]['view']
                 break
         else:
             raise HTTPNotFound

@@ -74,7 +74,7 @@ class MPDSongView(RESTView):
 
 
 def includeme(app):
-    app.setup_resource(MPDBase, GetView)
-    app.setup_resource(MPD, parent=app.root_class, name='mpd')
-    app.setup_resource(MPDPlaylist, parent=MPD, name='playlist')
-    app.setup_resource(MPDSong, MPDSongView)
+    app.bind_view(MPDBase, GetView)
+    app.add_child(app.root_class, 'mpd', MPD)
+    app.add_child(MPD, 'playlist', MPDPlaylist)
+    app.bind_view(MPDSong, MPDSongView)

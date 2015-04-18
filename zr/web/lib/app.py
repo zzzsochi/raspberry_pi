@@ -1,5 +1,6 @@
 import types
 import logging
+import warnings
 
 from aiohttp.web import Application as BaseApplication
 from zope.dottedname.resolve import resolve
@@ -53,6 +54,10 @@ class Application(BaseApplication):
 
         Usage from configuration process.
         """
+        if hasattr(self, name):
+            warnings.warn("method {} is already exist, replacing it"
+                          "".format(name))
+
         meth = types.MethodType(func, self)
         setattr(self, name, meth)
 
@@ -68,23 +73,8 @@ class Application(BaseApplication):
         """
         return self.root_class(request)
 
-    def setup_resource(self, resource, view=None, parent=None, name=None):
+    def bind_view(self, resource, view):
+        """ Bind view for resource
         """
-        """
-        assert ((parent is None and name is None)
-                or (parent is not None and name is not None))
-
-        setup = self['resources'].setdefault(resource, _ResourceSetup())
-
-        if view is not None:
-            setup.view = view
-
-        if parent is not None:
-            parent_setup = self['resources'].setdefault(parent, _ResourceSetup())
-            parent_setup.children[name] = resource
-
-
-class _ResourceSetup:
-    def __init__(self):
-        self.view = None
-        self.children = {}
+        setup = self['resources'].setdefault(resource, {})
+        setup['view'] = view

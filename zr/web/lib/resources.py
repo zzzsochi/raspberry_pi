@@ -28,8 +28,11 @@ class Resource(AbstractResource):
 class DispatchMixin:
     @asyncio.coroutine
     def __getchild__(self, name):
-        if self.setup is not None and name in self.setup.children:
-            return self.setup.children[name](self, name)
+        if (self.setup is not None
+                and 'children' in self.setup
+                and name in self.setup['children']):
+
+            return self.setup['children'][name](self, name)
         else:
             return None
 
@@ -44,3 +47,14 @@ class Root(DispatchResource):
         self.request = request
         self.app = self.request.app
         self.setup = self.app['resources'].get(self.__class__)
+
+
+def add_child(app, parent, name, child):
+    """
+    """
+    parent_setup = app['resources'].setdefault(parent, {})
+    parent_setup.setdefault('children', {})[name] = child
+
+
+def includeme(app):
+    app.add_method('add_child', add_child)

@@ -36,9 +36,9 @@ def add_static(app, parent, name, path, resource_class=StaticResource):
     """ Add resource for serve static
     """
     SRes = type(resource_class.__name__, (resource_class,), {'path': path})
-    app.setup_resource(SRes, parent=parent, name=name)
+    app.add_child(parent, name, SRes)
 
 
 def includeme(app):
     app.add_method('add_static', add_static)
-    app.setup_resource(StaticResource, StaticView)
+    app.bind_view(StaticResource, StaticView)
