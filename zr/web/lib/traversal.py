@@ -6,7 +6,8 @@ log = logging.getLogger(__name__)
 
 @asyncio.coroutine
 def traverse(root, path):
-    """
+    """ Find resource for path
+
     :param root: instance of Resource
     :param list path: ['events', 'event_id', 'sets', 'set_id']
     :return: `(resource, tail)`
@@ -35,7 +36,11 @@ class Traverser:
 
     @asyncio.coroutine
     def __iter__(self):
-        """ This is work?
+        """ This object is coroutine
+
+        For this:
+
+            yield from app.get_root()['a']['b']['c']
         """
         resource, tail = yield from self.traverse()
 
@@ -66,9 +71,21 @@ class Traverser:
 
 
 def lineage(resource):
+    """ Return a generator representing the lineage
+        of the resource object implied by the resource argument
+    """
     while resource is not None:
         yield resource
         try:
             resource = resource.parent
         except AttributeError:
             resource = None
+
+
+def find_root(resource):
+    """ Find root resource
+    """
+    for r in lineage(resource):
+        pass
+
+    return r

@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 
 
 class Application(BaseApplication):
+    """ Main application object
+    """
     root_class = Root
 
     def __init__(self, *args, **kwargs):
@@ -20,11 +22,15 @@ class Application(BaseApplication):
         self['resources'] = {}
 
     def start(self, loop):
+        """ Start applisation and add to event loop
+        """
         f = loop.create_server(self.make_handler(), '0.0.0.0', 8080)
         srv = loop.run_until_complete(f)
         log.info("start server: {!r}".format(srv))
 
     def include(self, name_or_func):
+        """ Include external configuration
+        """
         if callable(name_or_func):
             name_or_func(self)
         else:
@@ -43,16 +49,28 @@ class Application(BaseApplication):
             func(self)
 
     def add_method(self, name, func):
+        """ Add method to application
+
+        Usage from configuration process.
+        """
         meth = types.MethodType(func, self)
         setattr(self, name, meth)
 
     def set_root_class(self, root_class):
+        """ Set root resource class
+
+        Analogue of the "set_root_factory" method from pyramid framework.
+        """
         self.root_class = root_class
 
     def get_root(self, request):
+        """ Create new root resource instance
+        """
         return self.root_class(request)
 
     def setup_resource(self, resource, view=None, parent=None, name=None):
+        """
+        """
         assert ((parent is None and name is None)
                 or (parent is not None and name is not None))
 

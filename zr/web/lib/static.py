@@ -32,11 +32,13 @@ class StaticView(View):
             return Response(body=f.read())
 
 
+def add_static(app, parent, name, path, resource_class=StaticResource):
+    """ Add resource for serve static
+    """
+    SRes = type(resource_class.__name__, (resource_class,), {'path': path})
+    app.setup_resource(SRes, parent=parent, name=name)
+
+
 def includeme(app):
     app.add_method('add_static', add_static)
     app.setup_resource(StaticResource, StaticView)
-
-
-def add_static(app, parent, name, path):
-    SRes = type('StaticResource', (StaticResource,), {'path': path})
-    app.setup_resource(SRes, parent=parent, name=name)
