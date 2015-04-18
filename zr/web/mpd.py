@@ -1,25 +1,16 @@
-import json
 import asyncio
 
-from aiohttp.web import Response
 from aiohttp.web import HTTPNotFound
 
-from .lib.resources import Resource
-from .lib.views import View
+from .lib.resources import Resource, DispatchMixin
+from .lib.views import RESTView
 
 
-def jsonify(coro):
+class GetView(RESTView):
+    methods = {'get'}
+
     @asyncio.coroutine
-    def wrapper(self):
-        data = yield from coro(self)
-        return Response(body=json.dumps(data).encode('utf8'))
-
-    return wrapper
-
-
-class JSONView(View):
-    @jsonify
-    def __call__(self):
+    def get(self):
         return (yield from self.resource.get())
 
 
@@ -29,14 +20,7 @@ class MPDBase(Resource):
         self.mpd = self.app['mpd']
 
 
-class MPD(MPDBase):
-    @asyncio.coroutine
-    def __getchild__(self, name):
-        if name == 'playlist':
-            return MPDPlaylist(self, name)
-        else:
-            raise HTTPNotFound()
-
+class MPD(DispatchMixin, MPDBase):
     @asyncio.coroutine
     def get(self):
         return (yield from self.mpd.get_status())
@@ -52,22 +36,45 @@ class MPDPlaylist(MPDBase):
         return MPDSong(self, name)
 
 
-class MPDSong(MPDBase):
+class MPDSong(DispatchMixin, MPDBase):
     def __init__(self, parent, name):
         super().__init__(parent, name)
         self.id = int(name)
+
+    @asyncio.coroutine
+    def get(self):
+        playlist = yield from self.mpd.playlist.list()
+
+        for song in playlist:
+            if song['id'] == self.id:
+                return song
+        else:
+            return None
 
     @asyncio.coroutine
     def play(self):
         return (yield from self.mpd.playlist.play(self.id))
 
 
-class MPDSongView(JSONView):
-    @jsonify
-    def __call__(self):
+class MPDSongView(RESTView):
+    methods = {'get', 'put'}
+
+    @asyncio.coroutine
+    def get(self):
+        song = yield from self.resource.get()
+
+        if song:
+            return song
+        else:
+            raise HTTPNotFound
+
+    @asyncio.coroutine
+    def put(self):
         return (yield from self.resource.play())
 
 
 def includeme(app):
-    app.setup_resource(MPDBase, JSONView)
+    app.setup_resource(MPDBase, GetView)
+    app.setup_resource(MPD, parent=app.root_class, name='mpd')
+    app.setup_resource(MPDPlaylist, parent=MPD, name='playlist')
     app.setup_resource(MPDSong, MPDSongView)
