@@ -44,6 +44,9 @@ class Application(BaseApplication):
 
     def set_root_factory(self, root_factory):
         self.root_factory = root_factory
+    def add_method(self, name, func):
+        meth = types.MethodType(func, self)
+        setattr(self, name, meth)
 
     def get_root(self, request):
         return self.root_factory(request)
