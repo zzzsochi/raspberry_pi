@@ -13,6 +13,7 @@ NIGHT_END_DURATION = timedelta(hours=3)
 NIGHT_VOL_END = 30
 NIGHT_PLAYLIST = [
     'http://streaming.radionomy.com/SleepTime',
+    'http://sc9106.xpx.pl:9106',
     'http://shurf.me:9480/nature96.aac',
 ]
 
