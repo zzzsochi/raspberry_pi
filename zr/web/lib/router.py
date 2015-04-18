@@ -47,7 +47,9 @@ class Router(AbstractRouter):
         resource_class = resource.__class__
 
         for rc in resource_class.__mro__[:-1]:
-            if rc in self.app['resources']:
+            if (rc in self.app['resources']
+                    and self.app['resources'][rc].view is not None):
+
                 view = self.app['resources'][rc].view
                 break
         else:
