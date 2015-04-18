@@ -50,7 +50,7 @@ class Root(DispatchResource):
 
 
 def add_child(app, parent, name, child):
-    """
+    """ Add child resource for dispatch-resources
     """
     parent_setup = app['resources'].setdefault(parent, {})
     parent_setup.setdefault('children', {})[name] = child
