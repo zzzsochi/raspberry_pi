@@ -6,6 +6,7 @@ import asyncio
 import mimetypes
 import warnings
 import logging
+from collections import namedtuple
 
 from aiohttp.web import Response, HTTPNotFound
 
@@ -13,6 +14,9 @@ from .resources import Resource
 from .views import View
 
 log = logging.getLogger(__name__)
+
+
+StaticInfo = namedtuple('StaticInfo', ('path', 'content_type', 'data'))
 
 
 class StaticResource(Resource):
@@ -26,11 +30,8 @@ class StaticResource(Resource):
     def __getchild__(self, name):
         return None
 
-
-class StaticView(View):
-    @asyncio.coroutine
-    def __call__(self):
-        path = os.path.join(self.resource.path, *self.request.tail)
+    def get(self, path):
+        path = os.path.join(self.path, path)
 
         if not os.path.isfile(path):
             raise HTTPNotFound()
@@ -39,10 +40,23 @@ class StaticView(View):
         ct = mimetypes.types_map.get(ext, 'application/octet-stream')
 
         with open(path, 'rb') as f:
-            return Response(
-                body=f.read(),
-                headers={'Content-Type': ct},
-            )
+            return StaticInfo(path, ct, f.read())
+
+
+class StaticView(View):
+    @asyncio.coroutine
+    def __call__(self):
+        if self.request.tail:
+            path = os.path.join(*self.request.tail)
+        else:
+            path = ''
+
+        info = self.resource.get(path)
+
+        return Response(
+            body=info.data,
+            headers={'Content-Type': info.content_type},
+        )
 
 
 def add_static(app, parent, name, path, resource_class=StaticResource):
@@ -55,4 +69,4 @@ def add_static(app, parent, name, path, resource_class=StaticResource):
 def includeme(app):
     warnings.warn("Do not use this module in production!")
     app.add_method('add_static', add_static)
-    app.bind_view(StaticResource, StaticView)
+    app.bind_view(StaticResource, StaticView, tail='*')

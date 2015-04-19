@@ -18,7 +18,7 @@ class Resource(AbstractResource):
             self.setup = self.app['resources'].get(self.__class__)
 
     def __getitem__(self, name):
-        return Traverser(self, [name])
+        return Traverser(self, (name,))
 
     @asyncio.coroutine
     def __getchild__(self, name):
@@ -52,7 +52,7 @@ class Root(DispatchResource):
 def add_child(app, parent, name, child):
     """ Add child resource for dispatch-resources
     """
-    parent_setup = app['resources'].setdefault(parent, {})
+    parent_setup = app._get_resource_setup(parent)
     parent_setup.setdefault('children', {})[name] = child
 
 

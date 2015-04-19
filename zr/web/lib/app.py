@@ -73,11 +73,17 @@ class Application(BaseApplication):
         """
         return self._root_class(request)
 
-    def bind_view(self, resource, view):
+    def bind_view(self, resource, view, tail=()):
         """ Bind view for resource
         """
-        setup = self['resources'].setdefault(resource, {})
-        setup['view'] = view
+        if isinstance(tail, str) and tail != '*':
+            tail = tuple(i for i in tail.split('/') if i)
+
+        setup = self._get_resource_setup(resource)
+        setup['views'][tail] = view
+
+    def _get_resource_setup(self, resource):
+        return self['resources'].setdefault(resource, {'views': {}})
 
 
 class _ApplicationIncludeWrapper:

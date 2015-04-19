@@ -9,13 +9,13 @@ def traverse(root, path):
     """ Find resource for path
 
     :param root: instance of Resource
-    :param list path: ['events', 'event_id', 'sets', 'set_id']
+    :param list path: `('events', 'event_id', 'sets', 'set_id')`
     :return: `(resource, tail)`
     """
     if not path:
-        return root, path
+        return root, tuple(path)
 
-    path = path.copy()
+    path = list(path)
     traverser = root[path.pop(0)]
 
     while path:
@@ -32,7 +32,7 @@ class Traverser:
         self.path = path
 
     def __getitem__(self, item):
-        return Traverser(self.resource, self.path + [item])
+        return Traverser(self.resource, self.path + (item,))
 
     @asyncio.coroutine
     def __iter__(self):
@@ -56,18 +56,18 @@ class Traverser:
         :return: tuple `(resource, tail)`
         """
         last, current = None, self.resource
-        path = self.path.copy()
+        path = list(self.path)
 
         while path:
             item = path[0]
             last, current = current, (yield from current.__getchild__(item))
 
             if current is None:
-                return last, path
+                return last, tuple(path)
 
             del path[0]
 
-        return current, path
+        return current, tuple(path)
 
 
 def lineage(resource):

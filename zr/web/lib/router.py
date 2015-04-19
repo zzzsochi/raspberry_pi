@@ -28,6 +28,7 @@ class Router(AbstractRouter):
     @asyncio.coroutine
     def resolve(self, request):
         resource, tail = yield from self.traverse(request)
+        request.resource = resource
         request.tail = tail
         view = self.get_view(resource, tail)
 
@@ -35,7 +36,7 @@ class Router(AbstractRouter):
 
     @asyncio.coroutine
     def traverse(self, request):
-        path = [p for p in request.path.split('/') if p]
+        path = tuple(p for p in request.path.split('/') if p)
         root = self.app.get_root(request)
 
         if path:
@@ -43,15 +44,21 @@ class Router(AbstractRouter):
         else:
             return root, path
 
-    def get_view(self, resource, tail):
+    def get_view(self, resource, tail=()):
         resource_class = resource.__class__
 
         for rc in resource_class.__mro__[:-1]:
-            if (rc in self.app['resources']
-                    and self.app['resources'][rc].get('view') is not None):
+            if rc in self.app['resources']:
+                views = self.app['resources'][rc]['views']
 
-                view = self.app['resources'][rc]['view']
-                break
+                if tail in views:
+                    view = views[tail]
+                    break
+
+                elif '*' in views:
+                    view = views['*']
+                    break
+
         else:
             raise HTTPNotFound
 
