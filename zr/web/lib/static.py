@@ -7,7 +7,7 @@ import mimetypes
 import warnings
 import logging
 
-from aiohttp.web import Response
+from aiohttp.web import Response, HTTPNotFound
 
 from .resources import Resource
 from .views import View
@@ -31,7 +31,9 @@ class StaticView(View):
     @asyncio.coroutine
     def __call__(self):
         path = os.path.join(self.resource.path, *self.request.tail)
-        log.debug("static path: {}".format(path))
+
+        if not os.path.isfile(path):
+            raise HTTPNotFound()
 
         ext = os.path.splitext(path)[1]
         ct = mimetypes.types_map.get(ext, 'application/octet-stream')
