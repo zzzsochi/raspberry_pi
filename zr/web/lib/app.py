@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class Application(BaseApplication):
     """ Main application object
     """
-    root_class = Root
+    _root_class = Root
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('router', Router(self))
@@ -29,13 +29,13 @@ class Application(BaseApplication):
         srv = loop.run_until_complete(f)
         log.info("start server: {!r}".format(srv))
 
-    def include(self, name_or_func):
+    def include(self, name_or_func, module=None):
         """ Include external configuration
         """
         if callable(name_or_func):
-            name_or_func(self)
+            func = name_or_func
         else:
-            func = resolve(name_or_func)
+            func = resolve(name_or_func, module=module)
 
             if isinstance(func, types.ModuleType):
                 if not hasattr(func, 'includeme'):
@@ -47,7 +47,7 @@ class Application(BaseApplication):
                 raise ValueError("{}.includeme is not callable"
                                  "".format(func.__name__))
 
-            func(self)
+        func(_ApplicationIncludeWrapper(self, func.__module__))
 
     def add_method(self, name, func):
         """ Add method to application
@@ -66,15 +66,33 @@ class Application(BaseApplication):
 
         Analogue of the "set_root_factory" method from pyramid framework.
         """
-        self.root_class = root_class
+        self._root_class = root_class
 
     def get_root(self, request):
         """ Create new root resource instance
         """
-        return self.root_class(request)
+        return self._root_class(request)
 
     def bind_view(self, resource, view):
         """ Bind view for resource
         """
         setup = self['resources'].setdefault(resource, {})
         setup['view'] = view
+
+
+class _ApplicationIncludeWrapper:
+    def __init__(self, app, module):
+        self._app = app
+        self._module = module
+
+    def __getattr__(self, name):
+        return getattr(self._app, name)
+
+    def __getitem__(self, name):
+        return self._app[name]
+
+    def __setitem__(self, name, value):
+        self._app[name] = value
+
+    def include(self, name_or_func):
+        self._app.include(name_or_func, self._module)

@@ -7,11 +7,11 @@ class Root(BaseRoot):
 
 
 def includeme(app):
-    app.include('zr.web.lib.resources')
-    app.include('zr.web.lib.static')
+    app.include('.lib.resources')
+    app.include('.lib.static')
 
     app.set_root_class(Root)
     app.bind_view(Root, StaticView)
     app.add_static(Root, 'static', 'zr/web/static/')
 
-    app.include('zr.web.mpd')
+    app.include('.mpd')

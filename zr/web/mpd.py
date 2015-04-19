@@ -102,7 +102,7 @@ class MPDSongView(RESTView):
 
 
 def includeme(app):
-    app.add_child(app.root_class, 'mpd', MPD)
+    app.add_child(app._root_class, 'mpd', MPD)
     app.add_child(MPD, 'playlist', MPDPlaylist)
 
     app.bind_view(MPD, MPDView)
