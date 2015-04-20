@@ -2,7 +2,7 @@ import asyncio
 
 from aiohttp.web import HTTPNotFound, HTTPBadRequest
 
-from .lib.resources import Resource, DispatchMixin
+from .lib.resources import Resource, DispatchMixin, InitCoroMixin
 from .lib.views import RESTView
 
 
@@ -37,7 +37,7 @@ class MPDPlaylist(MPDBase):
 
     @asyncio.coroutine
     def __getchild__(self, name):
-        return MPDSong(self, name)
+        return (yield from MPDSong(self, name))
 
 
 class MPDPlaylistView(RESTView):
@@ -64,10 +64,22 @@ class MPDPlaylistView(RESTView):
         return (yield from self.resource.add(file))
 
 
-class MPDSong(DispatchMixin, MPDBase):
+class MPDSong(InitCoroMixin, MPDBase):
     def __init__(self, parent, name):
         super().__init__(parent, name)
-        self.id = int(name)
+
+        try:
+            self.id = int(name)
+        except ValueError:
+            raise HTTPNotFound
+
+    @asyncio.coroutine
+    def __init_coro__(self):
+        for item in (yield from self.mpd.playlist.list()):
+            if item['id'] == self.id:
+                break
+        else:
+            raise HTTPNotFound
 
     @asyncio.coroutine
     def get(self):
@@ -89,12 +101,7 @@ class MPDSongView(RESTView):
 
     @asyncio.coroutine
     def get(self):
-        song = yield from self.resource.get()
-
-        if song:
-            return song
-        else:
-            raise HTTPNotFound
+        return (yield from self.resource.get())
 
     @asyncio.coroutine
     def put(self):
