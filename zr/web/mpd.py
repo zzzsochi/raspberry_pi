@@ -17,12 +17,31 @@ class MPD(DispatchMixin, MPDBase):
     def get(self):
         return (yield from self.mpd.get_status())
 
+    @asyncio.coroutine
+    def action(self, action):
+        if action == 'toggle':
+            res = yield from self.mpd.toggle()
+        elif action == 'prev':
+            res = yield from self.mpd.prev()
+        elif action == 'next':
+            res = yield from self.mpd.next()
+        else:
+            raise HTTPBadRequest(reason="invalid action")
+
+        return res
+
 
 class MPDView(RESTView):
-    methods = {'get'}
+    methods = {'get', 'post'}
 
     @asyncio.coroutine
     def get(self):
+        return (yield from self.resource.get())
+
+    @asyncio.coroutine
+    def post(self):
+        action = (yield from self.request.json()).get('action')
+        yield from self.resource.action(action)
         return (yield from self.resource.get())
 
 

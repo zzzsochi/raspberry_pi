@@ -5,6 +5,10 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
     $scope.status = {};
     $scope.playlist = [];
 
+    var mpdService = $resource('/mpd', {}, {
+        send: {method: 'POST'}
+    });
+
     var mpdPlaylist = $resource('/mpd/playlist', {}, {
         list: {isArray: true},
         add: {method: 'POST', isArray: true}
@@ -33,6 +37,11 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
     $scope.refreshCycle = function (interval) {
         $scope.refresh();
         $timeout(function () {$scope.refreshCycle(interval)}, interval);
+    }
+
+    $scope.sendAction = function (action) {
+        mpdService.send({'action': action});
+        $scope.statusRefresh();
     }
 
     $scope.play = function (id) {
