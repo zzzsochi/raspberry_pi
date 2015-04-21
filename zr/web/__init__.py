@@ -40,3 +40,4 @@ def includeme(app):
     app.add_static(Root, 'static', 'zr/web/static/')
 
     app.include('.mpd')
+    app.include('.settings')

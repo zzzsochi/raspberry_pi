@@ -2,10 +2,15 @@ var rpiApp = angular.module('RpiApp', ['ngResource']);
 
 
 rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
+    $scope.settings = {'playlists': {}};
     $scope.status = {};
     $scope.playlist = [];
 
-    var mpdService = $resource('/mpd', {}, {
+    var mpdSettings = $resource('/mpd/settings', {}, {
+        get: {method: 'get'}
+    });
+
+    var mpdResource = $resource('/mpd', {}, {
         send: {method: 'POST'}
     });
 
@@ -13,7 +18,6 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
         list: {isArray: true},
         add: {method: 'POST', isArray: true}
     });
-
 
     $scope.statusRefresh = function () {
         var mpdStatus = $resource('/mpd');
@@ -39,8 +43,8 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
         $timeout(function () {$scope.refreshCycle(interval)}, interval);
     }
 
-    $scope.sendAction = function (action) {
-        mpdService.send({'action': action});
+    $scope.sendAction = function (action, callback) {
+        mpdResource.send({'action': action}, callback);
         $scope.statusRefresh();
     }
 
@@ -64,9 +68,20 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
         $scope.addNewUrl = '';
     }
 
-    $scope.playlistLoad = function(name) {
-        console.log(name);
+    $scope.addPlaylist = function(urls) {
+        $scope.sendAction('clear', function () {
+            urls.forEach(function (url) {
+                mpdPlaylist.add({file: url});
+            })
+            $timeout($scope.refresh, 1000);
+            $timeout($scope.refresh, 2000);
+            $timeout($scope.refresh, 5000);
+        })
+
     }
 
     $scope.refreshCycle(10000);
+    mpdSettings.get(function (res) {
+        $scope.settings = res;
+    })
 });

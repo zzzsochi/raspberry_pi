@@ -57,15 +57,18 @@
           <span class="glyphicon glyphicon-forward" aria-hidden="true"></span>
         </button>
 
-        <button type="button" class="btn btn-default dropdown-toggle disabled " data-toggle="dropdown" aria-expanded="false">
-          Выбрать плейлист <span class="caret"></span>
-        </button>
-        <ul class="dropdown-menu" role="menu">
-          <li><a ng-click="playlistLoad('rock')">Рок</a></li>
-          <li><a ng-click="playlistLoad('night')">Ночь</a></li>
-        </ul>
-      </div>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+            Выбрать плейлист <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li ng-repeat="(name, urls) in settings.playlists">
+              <a ng-click="addPlaylist(urls)">{{ name }}</a>
+            </li>
+          </ul>
+        </div>
 
+      </div>
       <!-- <slider ng-model="a" min="0" step="1" max="100" value="status.volume"></slider> -->
       <div class="list-group">
 
