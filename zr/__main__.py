@@ -1,3 +1,5 @@
+import os
+import json
 import asyncio
 import logging
 
@@ -16,6 +18,9 @@ from zr.web.lib.app import Application as Web
 
 
 log = logging.getLogger(__name__)
+
+
+SETTINGS = os.path.expanduser('~/.zr.json')
 
 
 class RadioController:
@@ -90,12 +95,18 @@ def main():
     logging.getLogger('zr.mpd_ctrl.mpc').setLevel('INFO')
     logging.getLogger('zr.mpd_ctrl.remote').setLevel('INFO')
 
+    if os.path.isfile(SETTINGS):
+        with open(SETTINGS) as f:
+            settings = json.load(f)
+    else:
+        settings = {}
+
     loop = asyncio.get_event_loop()
     tasks = []
 
     mpd = loop.run_until_complete(MPD.make_connection())
 
-    mpd_scheduler = MPDScheduler(mpd=mpd)
+    mpd_scheduler = MPDScheduler(mpd=mpd, settings=settings)
     tasks.append(asyncio.async(mpd_scheduler.start()))
 
     if WITH_RADIO:
@@ -104,6 +115,7 @@ def main():
 
     web = Web()
     web['mpd'] = mpd
+    web['settings'].update(settings)
     web.include('zr.web')
     web.start(loop)
 

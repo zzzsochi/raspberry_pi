@@ -1,0 +1,30 @@
+{
+    "web": {
+        "host": "0.0.0.0",
+        "port": "8080"
+    },
+    "playlists": {
+        "Night": [
+            "http://streaming.radionomy.com/SleepTime",
+            "http://sc9106.xpx.pl:9106",
+            "http://shurf.me:9480/nature96.aac"
+        ],
+        "Morning": [
+            "http://mega5.fast-serv.com:8134",
+            "http://74.86.186.4:10042",
+            "http://s14.myradiostream.com:4668"
+        ]
+    },
+    "scheduler": {
+        "night": {
+            "playlist": "Night",
+            "start": "20:00",
+            "volume": [35, [50, 600], [30, 10800]]
+        },
+        "morning": {
+            "playlist": "Morning",
+            "start": "4:00",
+            "volume": [10, [20, 3600]]
+        }
+    }
+}

@@ -20,6 +20,7 @@ class Application(BaseApplication):
         kwargs.setdefault('router', Router(self))
         super().__init__(*args, **kwargs)
 
+        self['settings'] = {}
         self['resources'] = {}
 
     def start(self, loop):
