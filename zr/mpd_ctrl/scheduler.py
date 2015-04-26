@@ -12,8 +12,9 @@ class MPDScheduler:
 
     @asyncio.coroutine
     def start(self):
+        self._futures = []
         for name in self.settings['scheduler']:
-            self._futures = [asyncio.async(self._start_task(name))]
+            self._futures.append(asyncio.async(self._start_task(name)))
 
     def stop(self):
         for f in self._futures:
