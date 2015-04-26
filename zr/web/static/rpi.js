@@ -44,7 +44,11 @@ rpiApp.controller('MPDCtrl', function ($scope, $resource, $timeout) {
     }
 
     $scope.sendAction = function (action, callback) {
-        mpdResource.send({'action': action}, callback);
+        if (callback) {
+            mpdResource.send({'action': action}, callback);
+        } else {
+            mpdResource.send({'action': action});
+        }
         $scope.statusRefresh();
     }
 
