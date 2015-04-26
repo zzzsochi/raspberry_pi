@@ -9,7 +9,6 @@ setup(name='mpd_ctrl',
           "License :: Other/Proprietary License",
           "Operating System :: POSIX",
           "Programming Language :: Python :: 3.4",
-          "Framework :: Pyramid",
           "Topic :: Internet :: WWW/HTTP",
       ],
       author='Alexander Zelenyak',
@@ -21,8 +20,8 @@ setup(name='mpd_ctrl',
       zip_safe=False,
       install_requires=[
           'aiohttp',
+          'aiompd',
           'zope.dottedname',
-          'python-mpd2',
       ],  # 'quick2wire'],
       entry_points={
           'console_scripts': [

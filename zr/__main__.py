@@ -3,6 +3,8 @@ import json
 import asyncio
 import logging
 
+import aiompd
+
 try:
     from zr.lib.nrf24 import NRF24
 except ImportError:
@@ -10,7 +12,7 @@ except ImportError:
 else:
     WITH_RADIO = True
 
-from zr.mpd_ctrl.mpc import MPD
+# from zr.mpd_ctrl.mpc import MPD
 from zr.mpd_ctrl.remote import MpdPipe
 from zr.mpd_ctrl.scheduler import MPDScheduler
 
@@ -21,6 +23,16 @@ log = logging.getLogger(__name__)
 
 
 SETTINGS = os.path.expanduser('~/.zr.json')
+
+
+def logging_setup():
+    logging.basicConfig(level=logging.DEBUG)
+
+    logging.getLogger('zr.lib.nrf24').setLevel('INFO')
+    logging.getLogger('zr.mpd_ctrl.remote').setLevel('INFO')
+
+    logging.getLogger('aiohttp').setLevel('INFO')
+    logging.getLogger('aiompd').setLevel('INFO')
 
 
 class RadioController:
@@ -90,10 +102,7 @@ class RadioController:
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger('zr.lib.nrf24').setLevel('INFO')
-    logging.getLogger('zr.mpd_ctrl.mpc').setLevel('INFO')
-    logging.getLogger('zr.mpd_ctrl.remote').setLevel('INFO')
+    logging_setup()
 
     if os.path.isfile(SETTINGS):
         with open(SETTINGS) as f:
@@ -104,7 +113,7 @@ def main():
     loop = asyncio.get_event_loop()
     tasks = []
 
-    mpd = loop.run_until_complete(MPD.make_connection())
+    mpd = loop.run_until_complete(aiompd.Client.make_connection())
 
     mpd_scheduler = MPDScheduler(mpd=mpd, settings=settings)
     tasks.append(asyncio.async(mpd_scheduler.start()))

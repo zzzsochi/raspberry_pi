@@ -62,11 +62,11 @@ class MPDView(RESTView):
 class MPDPlaylist(MPDBase):
     @asyncio.coroutine
     def list(self):
-        return (yield from self.mpd.playlist.list())
+        return (yield from self.mpd.playlist())
 
     @asyncio.coroutine
     def add(self, url):
-        return (yield from self.mpd.playlist.add(url))
+        return (yield from self.mpd.add(url))
 
     @asyncio.coroutine
     def __getchild__(self, name):
@@ -108,7 +108,7 @@ class MPDSong(InitCoroMixin, MPDBase):
 
     @asyncio.coroutine
     def __init_coro__(self):
-        for item in (yield from self.mpd.playlist.list()):
+        for item in (yield from self.mpd.playlist()):
             if item['id'] == self.id:
                 break
         else:
@@ -116,7 +116,7 @@ class MPDSong(InitCoroMixin, MPDBase):
 
     @asyncio.coroutine
     def get(self):
-        playlist = yield from self.mpd.playlist.list()
+        playlist = yield from self.mpd.playlist()
 
         for song in playlist:
             if song['id'] == self.id:
@@ -126,7 +126,7 @@ class MPDSong(InitCoroMixin, MPDBase):
 
     @asyncio.coroutine
     def play(self):
-        return (yield from self.mpd.playlist.play(self.id))
+        return (yield from self.mpd.play(id=self.id))
 
 
 class MPDSongView(RESTView):
