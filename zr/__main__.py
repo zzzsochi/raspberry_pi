@@ -1,6 +1,8 @@
 import os
 import json
 import asyncio
+import signal
+import functools
 import logging
 
 import aiompd
@@ -12,7 +14,6 @@ except ImportError:
 else:
     WITH_RADIO = True
 
-# from zr.mpd_ctrl.mpc import MPD
 from zr.mpd_ctrl.remote import MpdPipe
 from zr.mpd_ctrl.scheduler import MPDScheduler
 
@@ -101,6 +102,11 @@ class RadioController:
                 task.cancel()
 
 
+def exit_handler(loop, signame):
+    log.info('got signal {}: exit'.format(signame))
+    loop.stop()
+
+
 def main():
     logging_setup()
 
@@ -128,9 +134,14 @@ def main():
     web.include('zr.web')
     web.start(loop)
 
+    for signame in ['SIGINT', 'SIGTERM']:
+        loop.add_signal_handler(
+            getattr(signal, signame),
+            functools.partial(exit_handler, loop, signame))
+
     try:
         loop.run_forever()
-    except KeyboardInterrupt:
+
         mpd_scheduler.stop()
 
         if WITH_RADIO:
@@ -138,14 +149,14 @@ def main():
 
         if tasks:
             try:
-                loop.run_until_complete(asyncio.wait(tasks, timeout=5))
+                loop.run_until_complete(asyncio.wait(
+                    tasks + [asyncio.async(web.finish())],
+                    timeout=5))
             except Exception as exc:
-                log.error('exception while coroutines stoped: {}'.format(type(exc)))
-                log.error(exc)
-                import traceback
-                traceback.print_exc()
-
-        loop.stop()
+                loop.call_exception_handler({
+                    'message': "Error in finish callback",
+                    'exception': exc,
+                })
     finally:
         loop.close()
 
