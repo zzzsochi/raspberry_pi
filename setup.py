@@ -6,7 +6,7 @@ setup(name='mpd_ctrl',
       description='controller for mpd',
       # long_description=README,
       classifiers=[
-          "License :: Other/Proprietary License",
+          "License :: OSI Approved :: BSD License",
           "Operating System :: POSIX",
           "Programming Language :: Python :: 3.4",
           "Topic :: Internet :: WWW/HTTP",
