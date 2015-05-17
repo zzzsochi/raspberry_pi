@@ -2,8 +2,8 @@ import asyncio
 
 from aiohttp.web import HTTPNotFound, HTTPBadRequest
 
-from .lib.resources import Resource, DispatchMixin, InitCoroMixin
-from .lib.views import RESTView
+from aiotraversal.resources import Resource, DispatchMixin, InitCoroMixin
+from aiotraversal.views import RESTView
 
 
 class MPDBase(Resource):

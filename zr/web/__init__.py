@@ -2,13 +2,8 @@ import os
 import asyncio
 
 from aiohttp.web import Response
-
-from .lib.resources import Root as BaseRoot
-from .lib.views import MethodsView
-
-
-class Root(BaseRoot):
-    pass
+from aiotraversal.resources import Root
+from aiotraversal.views import MethodsView
 
 
 class RootView(MethodsView):
@@ -30,10 +25,9 @@ class RootView(MethodsView):
 
 
 def includeme(app):
-    app.include('.lib.resources')
-    app.include('.lib.static')
+    app.include('aiotraversal.resources')
+    app.include('aiotraversal.static')
 
-    app.set_root_class(Root)
     app.bind_view(Root, RootView)
     app.bind_view(Root, RootView, tail='favicon.ico')
 

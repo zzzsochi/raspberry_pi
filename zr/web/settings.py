@@ -1,7 +1,7 @@
 import asyncio
 
-from .lib.resources import Resource
-from .lib.views import RESTView
+from aiotraversal.resources import Resource
+from aiotraversal.views import RESTView
 
 from .mpd import MPD
 

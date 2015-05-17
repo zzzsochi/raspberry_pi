@@ -17,7 +17,7 @@ else:
 from zr.mpd_ctrl.remote import MpdPipe
 from zr.mpd_ctrl.scheduler import MPDScheduler
 
-from zr.web.lib.app import Application as Web
+from aiotraversal import Application as Web
 
 
 log = logging.getLogger(__name__)
